@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 export interface Todo {
     title : string;
     completed : boolean;
+    created_by:mongoose.Types.ObjectId;
     createdAt ?: Date;
     updatedAt ?: Date;
 }
@@ -19,6 +20,11 @@ const todoSchema = new mongoose.Schema<Todo>(
             required:true,
             default:false,
         },
+        created_by:{
+            type: mongoose.Schema.Types.ObjectId,
+            ref:"Users",
+            required:true
+        }
     },
     {
         timestamps:true

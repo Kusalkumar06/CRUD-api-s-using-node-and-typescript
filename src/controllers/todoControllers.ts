@@ -1,9 +1,11 @@
 import type { Request,Response } from "express"
 import { TodoModel } from "../models/todoModel.js"
+// import { AuthRequest } from "../middlewares/authMiddleware.js";
 
 export const getTodos = async (req : Request, res: Response) => {
     try {
-        const todos = await TodoModel.find()
+        const user_id = req.user.user_id;
+        const todos = await TodoModel.find({created_by: user_id})
         res.status(200).json(todos)
     } catch(err){
         res.status(500).json({
@@ -15,12 +17,17 @@ export const getTodos = async (req : Request, res: Response) => {
 export const createTodo = async (req : Request, res: Response) => {
     try{
         const {title,completed} = req.body
+        const user_id = req.user.user_id
         if (!title || typeof(title) !== "string"){
             res.status(400).json({
                 message: "Please provide a non empty title or string."
             })
         } else {
-            const todo = await TodoModel.create({title,completed})
+            const todo = await TodoModel.create({
+                title,
+                completed,
+                created_by : user_id,
+            })
             res.status(201).json(todo);
         }
     }
@@ -34,7 +41,8 @@ export const createTodo = async (req : Request, res: Response) => {
 export const specificTodo = async (req : Request, res: Response) => {
     try{
         const {id} = req.params
-        const todo = await TodoModel.findById({_id: id})
+        const user_id = req.user.user_id
+        const todo = await TodoModel.findById({_id: id,created_by : user_id})
         if (!todo){
             res.status(401).json({
                 message: "Todo Id is not valid"
@@ -52,7 +60,8 @@ export const specificTodo = async (req : Request, res: Response) => {
 export const updateTodo = async (req : Request, res: Response) => {
     try{
         const {title,completed} = req.body
-        const todo = await TodoModel.findByIdAndUpdate(req.params.id,{title,completed},{new : true})
+        const user_id = req.user.user_id
+        const todo = await TodoModel.findByIdAndUpdate(req.params.id,{title,completed,created_by:user_id},{new : true})
         if (!todo){
             res.status(401).json({
                 message:"Todo not found."
@@ -73,7 +82,9 @@ export const updateTodo = async (req : Request, res: Response) => {
 
 export const deleteTodo = async (req : Request, res: Response) => {
     try{
-        const todo = await TodoModel.findByIdAndDelete(req.params.id)
+        const {id} = req.params 
+        const user_id = req.user.user_id
+        const todo = await TodoModel.findByIdAndDelete({_id:id,created_by:user_id})
         if (!todo){
             res.status(401).json({
                 message:"Todo not found."
